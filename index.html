@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Attendance System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#2563eb',
+                        secondary: '#1e40af',
+                        accent: '#3b82f6',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .card-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <header class="mb-8">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800"><i class="fas fa-book-open text-primary mr-2"></i> Library Attendance</h1>
+                    <p class="text-gray-600">Track student check-ins/check-outs in real-time</p>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                            <i class="fas fa-search text-gray-400"></i>
+                        </span>
+                        <input type="text" id="search" placeholder="Search students..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+
+                    </div>
+
+                    <div class="flex space-x-2 mt-2">
+                        <div class="relative flex-grow">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                                <i class="fas fa-book text-gray-400"></i>
+                            </span>
+                            <input type="text" id="book-search" placeholder="Look for a book..." class="pl-10 pr-4 py-2 border rounded-lg w-full focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        <button id="search-book-btn" class="bg-primary hover:bg-secondary text-white px-4 py-2 rounded-lg font-medium transition duration-200">
+                            <i class="fas fa-search mr-1"></i> Find
+                        </button>
+                    </div>
+
+                    <div id="time-display" class="text-gray-600 font-medium"></div>
+                </div>
+            </div>
+        </header>
+
+        <div id="book-result" class="mb-6 hidden">
+            <div class="bg-white rounded-xl card-shadow p-4">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-lg font-semibold text-gray-800">Book Location</h3>
+                    <button id="close-book-result" class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="book-info" class="flex items-start">
+                    <div class="bg-primary p-3 rounded-full text-white mr-4">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <div>
+                        <h4 id="book-title" class="font-medium text-gray-800"></h4>
+                        <p id="book-author" class="text-sm text-gray-600"></p>
+                        <div class="mt-2">
+                            <span class="text-xs font-medium bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                                Section: <span id="book-section"></span>
+                            </span>
+                            <span class="ml-2 text-xs font-medium bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                Shelf: <span id="book-shelf"></span>
+                            </span>
+                        </div>
+                        <p id="book-status" class="mt-2 text-sm"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Student Check-In Form -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-xl card-shadow p-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Student Check-In/Out</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="student-id" class="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
+                            <input type="text" id="student-id" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter student ID">
+                        </div>
+                        <div>
+                            <label for="student-name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                            <input type="text" id="student-name" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="Enter full name">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <button id="check-in-btn" class="bg-primary hover:bg-secondary text-white py-2 px-4 rounded-lg font-medium transition duration-200 flex items-center justify-center">
+                                <i class="fas fa-sign-in-alt mr-2"></i> Check In
+                            </button>
+                            <button id="check-out-btn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 px-4 rounded-lg font-medium transition duration-200 flex items-center justify-center">
+                                <i class="fas fa-sign-out-alt mr-2"></i> Check Out
+                            </button>
+                        </div>
+                        <div id="notification" class="hidden p-3 rounded-lg"></div>
+                    </div>
+                </div>
+
+                <!-- Stats Section -->
+                <div class="bg-white rounded-xl card-shadow p-6 mt-6">
+                    <h2 class="text-xl font-semibold text-gray-800 mb-4">Today's Stats</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="bg-primary p-3 rounded-full text-white mr-3">
+                                    <i class="fas fa-users"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Total Present</p>
+                                    <h3 id="total-present" class="text-2xl font-bold">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="bg-green-500 p-3 rounded-full text-white mr-3">
+                                    <i class="fas fa-sign-in-alt"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Check Ins</p>
+                                    <h3 id="total-checkins" class="text-2xl font-bold">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-orange-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="bg-orange-500 p-3 rounded-full text-white mr-3">
+                                    <i class="fas fa-sign-out-alt"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Check Outs</p>
+                                    <h3 id="total-checkouts" class="text-2xl font-bold">0</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-purple-50 p-4 rounded-lg">
+                            <div class="flex items-center">
+                                <div class="bg-purple-500 p-3 rounded-full text-white mr-3">
+                                    <i class="fas fa-user-clock"></i>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500">Avg. Time</p>
+                                    <h3 id="avg-time" class="text-2xl font-bold">0h 0m</h3>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Activity -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl card-shadow p-6 h-full">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold text-gray-800">Current Activity</h2>
+                        <div class="flex space-x-2">
+                            <button id="refresh-btn" class="text-primary hover:text-secondary">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button id="export-btn" class="text-primary hover:text-secondary">
+                                <i class="fas fa-file-export"></i>
+                            </button>
+                            <button id="clear-data-btn" class="text-red-500 hover:text-red-700" title="Clear all data">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Student ID</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody id="activity-table" class="bg-white divide-y divide-gray-200">
+                                <tr id="no-records" class="text-center py-4">
+                                    <td colspan="5" class="px-6 py-4 text-gray-500">No activity records yet. Check in a student to begin tracking.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Current time display
+        function updateTime() {
+            const now = new Date();
+            const options = { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric', 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            };
+            document.getElementById('time-display').textContent = now.toLocaleDateString('en-US', options);
+        }
+        updateTime();
+        setInterval(updateTime, 60000);
+
+        // Data storage
+        let students = [];
+        let activity = [];
+
+        // Load data from localStorage
+        function loadData() {
+            const savedStudents = localStorage.getItem('libraryAttendanceStudents');
+            const savedActivity = localStorage.getItem('libraryAttendanceActivity');
+            
+            if (savedStudents) {
+                students = JSON.parse(savedStudents);
+            }
+            
+            if (savedActivity) {
+                activity = JSON.parse(savedActivity).map(record => {
+                    return {
+                        ...record,
+                        checkInTime: new Date(record.checkInTime),
+                        checkOutTime: record.checkOutTime ? new Date(record.checkOutTime) : null
+                    };
+                });
+            }
+            
+            // Generate sample students if no data exists
+            if (students.length === 0) {
+                generateSampleStudents();
+                saveData();
+            }
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('libraryAttendanceStudents', JSON.stringify(students));
+            
+            // Convert Date objects to strings for storage
+            const activityForStorage = activity.map(record => {
+                return {
+                    ...record,
+                    checkInTime: record.checkInTime.toISOString(),
+                    checkOutTime: record.checkOutTime ? record.checkOutTime.toISOString() : null
+                };
+            });
+            
+            localStorage.setItem('libraryAttendanceActivity', JSON.stringify(activityForStorage));
+        }
+
+        // Generate a sample student for demonstration
+        function generateSampleStudents() {
+            const sampleNames = [
+                "Emily Johnson", "Michael Smith", "Sarah Williams", 
+                "David Brown", "Jessica Davis", "Robert Miller"
+            ];
+            
+            for (let i = 1; i <= 6; i++) {
+                students.push({
+                    id: `STU00${i}`,
+                    name: sampleNames[i-1],
+                    email: `${sampleNames[i-1].toLowerCase().replace(' ', '.')}@university.edu`
+                });
+            }
+        }
+
+        // Page load initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateActivityTable();
+            updateStats();
+        });
+
+        // Check In Button
+        document.getElementById('check-in-btn').addEventListener('click', function() {
+            const studentId = document.getElementById('student-id').value.trim();
+            const studentName = document.getElementById('student-name').value.trim();
+            
+            if (!studentId || !studentName) {
+                showNotification('Please enter both Student ID and Name', 'error');
+                return;
+            }
+
+            // Check if student is already checked in
+            const activeRecord = activity.find(record => 
+                record.studentId === studentId && !record.checkOutTime
+            );
+            
+            if (activeRecord) {
+                showNotification('This student is already checked in', 'warning');
+                return;
+            }
+
+            // Create new record
+            const now = new Date();
+            const newRecord = {
+                studentId,
+                studentName,
+                checkInTime: now,
+                checkOutTime: null
+            };
+
+            // Add to student list if new
+            if (!students.some(s => s.id === studentId)) {
+                students.push({
+                    id: studentId,
+                    name: studentName,
+                    email: `${studentName.toLowerCase().replace(' ', '.')}@university.edu`
+                });
+            }
+
+            activity.push(newRecord);
+            showNotification(`Checked in ${studentName} (${studentId})`, 'success');
+            document.getElementById('student-id').value = '';
+            document.getElementById('student-name').value = '';
+            
+            saveData();
+            updateActivityTable();
+            updateStats();
+        });
+
+        // Check Out Button
+        document.getElementById('check-out-btn').addEventListener('click', function() {
+            const studentId = document.getElementById('student-id').value.trim();
+            
+            if (!studentId) {
+                showNotification('Please enter Student ID', 'error');
+                return;
+            }
+
+            // Find active record
+            const activeRecordIndex = activity.findIndex(record => 
+                record.studentId === studentId && !record.checkOutTime
+            );
+            
+            if (activeRecordIndex === -1) {
+                showNotification('No active check-in found for this student', 'warning');
+                return;
+            }
+
+            // Update record
+            const now = new Date();
+            activity[activeRecordIndex].checkOutTime = now;
+            
+            // Calculate duration
+            const checkInTime = new Date(activity[activeRecordIndex].checkInTime);
+            const duration = (now - checkInTime) / (1000 * 60); // in minutes
+            
+            showNotification(`Checked out ${activity[activeRecordIndex].studentName} after ${Math.floor(duration)} minutes`, 'success');
+            document.getElementById('student-id').value = '';
+            document.getElementById('student-name').value = '';
+            
+            saveData();
+            updateActivityTable();
+            updateStats();
+        });
+
+        // Show notification
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = ''; // Clear classes
+            
+            const baseClasses = 'p-3 rounded-lg flex items-center';
+            const typeClasses = {
+                'success': `${baseClasses} bg-green-100 text-green-800`,
+                'error': `${baseClasses} bg-red-100 text-red-800`,
+                'warning': `${baseClasses} bg-yellow-100 text-yellow-800`
+            };
+            
+            notification.className = typeClasses[type] || baseClasses;
+            
+            // Add icon based on type
+            const icon = {
+                'success': 'fa-check-circle',
+                'error': 'fa-exclamation-circle',
+                'warning': 'fa-exclamation-triangle'
+            }[type] || 'fa-info-circle';
+            
+            notification.innerHTML = `<i class="fas ${icon} mr-2"></i> ${message}`;
+            notification.classList.remove('hidden');
+            
+            setTimeout(() => {
+                notification.classList.add('hidden');
+            }, 3000);
+        }
+
+        // Update activity table
+        function updateActivityTable() {
+            const tableBody = document.getElementById('activity-table');
+            const noRecordsRow = document.getElementById('no-records');
+            
+            if (activity.length === 0) {
+                noRecordsRow.classList.remove('hidden');
+                tableBody.innerHTML = '';
+                tableBody.appendChild(noRecordsRow);
+                return;
+            }
+            
+            noRecordsRow.classList.add('hidden');
+            tableBody.innerHTML = '';
+            
+            // Sort by check-in time (newest first)
+            const sortedActivity = [...activity].sort((a, b) => 
+                new Date(b.checkInTime) - new Date(a.checkInTime)
+            );
+            
+            sortedActivity.forEach(record => {
+                const row = document.createElement('tr');
+                
+                // Format time
+                const checkInTime = new Date(record.checkInTime);
+                const checkInTimeStr = checkInTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                // Calculate duration if checked out
+                let durationStr = '-';
+                let statusBadge = '<span class="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800"><i class="fas fa-circle-check mr-1"></i> In Library</span>';
+                
+                if (record.checkOutTime) {
+                    const checkOutTime = new Date(record.checkOutTime);
+                    const duration = (checkOutTime - checkInTime) / (1000 * 60); // in minutes
+                    
+                    const hours = Math.floor(duration / 60);
+                    const minutes = Math.floor(duration % 60);
+                    durationStr = `${hours}h ${minutes}m`;
+                    
+                    statusBadge = '<span class="px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"><i class="fas fa-door-closed mr-1"></i> Checked Out</span>';
+                }
+                
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${record.studentId}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${record.studentName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${statusBadge}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${checkInTimeStr}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${durationStr}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Update stats
+        function updateStats() {
+            const totalPresent = activity.filter(record => !record.checkOutTime).length;
+            const totalCheckIns = activity.length;
+            const totalCheckOuts = activity.filter(record => record.checkOutTime).length;
+            
+            // Calculate average time
+            let avgMinutes = 0;
+            const checkedOutRecords = activity.filter(record => record.checkOutTime);
+            if (checkedOutRecords.length > 0) {
+                const totalTime = checkedOutRecords.reduce((sum, record) => {
+                    return sum + (new Date(record.checkOutTime) - new Date(record.checkInTime));
+                }, 0);
+                avgMinutes = totalTime / checkedOutRecords.length / (1000 * 60);
+            }
+            
+            const hours = Math.floor(avgMinutes / 60);
+            const minutes = Math.floor(avgMinutes % 60);
+            
+            document.getElementById('total-present').textContent = totalPresent;
+            document.getElementById('total-checkins').textContent = totalCheckIns;
+            document.getElementById('total-checkouts').textContent = totalCheckOuts;
+            document.getElementById('avg-time').textContent = `${hours}h ${minutes}m`;
+        }
+
+        // Refresh button
+        document.getElementById('refresh-btn').addEventListener('click', function() {
+            updateActivityTable();
+            updateStats();
+            showNotification('Data refreshed', 'success');
+        });
+
+        // Export button
+        document.getElementById('export-btn').addEventListener('click', function() {
+            if (activity.length === 0) {
+                showNotification('No data to export', 'warning');
+                return;
+            }
+            
+            let csv = 'Student ID,Name,Status,Check In Time,Check Out Time,Duration\n';
+            
+            activity.forEach(record => {
+                const checkInTime = new Date(record.checkInTime).toLocaleString();
+                const checkOutTime = record.checkOutTime ? new Date(record.checkOutTime).toLocaleString() : '';
+                
+                let duration = '-';
+                if (record.checkOutTime) {
+                    const mins = (new Date(record.checkOutTime) - new Date(record.checkInTime)) / (1000 * 60);
+                    const hours = Math.floor(mins / 60);
+                    const minutes = Math.floor(mins % 60);
+                    duration = `${hours}h ${minutes}m`;
+                }
+                
+                const status = record.checkOutTime ? 'Checked Out' : 'In Library';
+                
+                csv += `"${record.studentId}","${record.studentName}","${status}","${checkInTime}","${checkOutTime}","${duration}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `library_attendance_${new Date().toISOString().slice(0, 10)}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showNotification('Data exported to CSV', 'success');
+        });
+
+        // Clear data button
+        document.getElementById('clear-data-btn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
+                students = [];
+                activity = [];
+                localStorage.removeItem('libraryAttendanceStudents');
+                localStorage.removeItem('libraryAttendanceActivity');
+                
+                // Regenerate sample students
+                generateSampleStudents();
+                saveData();
+                
+                updateActivityTable();
+                updateStats();
+                showNotification('All data has been cleared', 'success');
+            }
+        });
+
+        // Search functionality
+        document.getElementById('search').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const rows = document.querySelectorAll('#activity-table tr:not(#no-records)');
+            
+            if (searchTerm === '') {
+                rows.forEach(row => row.style.display = '');
+                return;
+            }
+            
+            rows.forEach(row => {
+                const name = row.children[1].textContent.toLowerCase();
+                const id = row.children[0].textContent.toLowerCase();
+                
+                if (name.includes(searchTerm) || id.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+
+        const bookCollection = [
+        {
+            title: "The Great Gatsby",
+            author: "F. Scott Fitzgerald",
+            section: "Fiction",
+            shelf: "F-12",
+            available: true
+        },
+        {
+            title: "To Kill a Mockingbird",
+            author: "Harper Lee",
+            section: "Fiction",
+            shelf: "F-23",
+            available: true
+        },
+        {
+            title: "1984",
+            author: "George Orwell",
+            section: "Science Fiction",
+            shelf: "SF-05",
+            available: false
+        },
+        {
+            title: "The Hobbit",
+            author: "J.R.R. Tolkien",
+            section: "Fantasy",
+            shelf: "FA-08",
+            available: true
+        },
+        {
+            title: "Pride and Prejudice",
+            author: "Jane Austen",
+            section: "Classic Literature",
+            shelf: "CL-11",
+            available: true
+        },
+        {
+            title: "Introduction to Algorithms",
+            author: "Thomas H. Cormen",
+            section: "Computer Science",
+            shelf: "CS-02",
+            available: true
+        },
+        {
+            title: "The Art of Computer Programming",
+            author: "Donald Knuth",
+            section: "Computer Science",
+            shelf: "CS-01",
+            available: false
+        }
+    ];
+
+    // Book search functionality
+    document.getElementById('search-book-btn').addEventListener('click', function() {
+        searchBook();
+    });
+
+    // Also trigger search on Enter key
+    document.getElementById('book-search').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchBook();
+        }
+    });
+
+    function searchBook() {
+        const searchTerm = document.getElementById('book-search').value.trim().toLowerCase();
+        
+        if (!searchTerm) {
+            showNotification('Please enter a book title or author', 'warning');
+            return;
+        }
+        
+        const foundBooks = bookCollection.filter(book => 
+            book.title.toLowerCase().includes(searchTerm) || 
+            book.author.toLowerCase().includes(searchTerm)
+        );
+        
+        if (foundBooks.length === 0) {
+            showNotification('No books found matching your search', 'warning');
+            document.getElementById('book-result').classList.add('hidden');
+            return;
+        }
+        
+        // Just show the first match for simplicity
+        const book = foundBooks[0];
+        
+        document.getElementById('book-title').textContent = book.title;
+        document.getElementById('book-author').textContent = book.author;
+        document.getElementById('book-section').textContent = book.section;
+        document.getElementById('book-shelf').textContent = book.shelf;
+        
+        const statusElement = document.getElementById('book-status');
+        if (book.available) {
+            statusElement.innerHTML = '<i class="fas fa-check-circle text-green-500 mr-1"></i> Available for checkout';
+            statusElement.className = 'mt-2 text-sm text-green-700';
+        } else {
+            statusElement.innerHTML = '<i class="fas fa-times-circle text-red-500 mr-1"></i> Currently checked out';
+            statusElement.className = 'mt-2 text-sm text-red-700';
+        }
+        
+        document.getElementById('book-result').classList.remove('hidden');
+    }
+
+    // Close book result
+    document.getElementById('close-book-result').addEventListener('click', function() {
+        document.getElementById('book-result').classList.add('hidden');
+    });
+    </script>
+</body>
+</html>
